@@ -124,7 +124,7 @@ export default function ClientDetailPage() {
   }, [])
 
   if (loading) return <Loader />
-  if (!isNew && !client) return <div className="empty">Δεν βρέθηκε</div>
+  if (!client) return <Loader />
 
   return (
     <div>
