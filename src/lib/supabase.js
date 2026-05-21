@@ -49,6 +49,7 @@ export async function fetchClients() {
 }
 
 export async function fetchClient(id) {
+  if (!id || id === 'new' || id === 'undefined') return null
   const { data, error } = await supabase
     .from('clients')
     .select('*')
