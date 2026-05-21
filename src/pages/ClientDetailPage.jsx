@@ -28,7 +28,13 @@ const STATUS_OPTS = [
   { value: 'warn', label: 'Εκκρεμότητες' },
   { value: 'err',  label: 'Πρόβλημα' },
 ]
-const VISIT_TYPES = ['Προληπτική','Διορθωτική','Εγκατάσταση','Αναβάθμιση','Αντικατάσταση','Τηλεφωνική']
+
+const EMPTY_CLIENT = {
+  name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
+  server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
+  sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
+  tech_id:'', status:'ok', last_visit:'', notes:'',
+}
 
 function Field({ label, children, full }) {
   return (
@@ -46,45 +52,31 @@ export default function ClientDetailPage() {
   const { session, profile, isAdmin } = useAuth()
   const { showToast, ToastNode } = useToast()
 
-  const [tab, setTab]           = useState('general')
-  const [client, setClient] = useState(isNew ? {
-  name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
-  server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
-  sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
-  tech_id: '', status: 'ok', last_visit:'', notes:'',
-} : null)
+  const [tab, setTab]             = useState('general')
+  const [client, setClient]       = useState(null)
   const [equipment, setEquipment] = useState({})
-  const [visits, setVisits]     = useState([])
-  const [profiles, setProfiles] = useState([])
-  const [loading, setLoading]   = useState(false)
-  const [saving, setSaving]     = useState(false)
+  const [visits, setVisits]       = useState([])
+  const [profiles, setProfiles]   = useState([])
+  const [saving, setSaving]       = useState(false)
 
- useEffect(() => {
-   if (!session) return
-  if (isNew) {
-    setClient({
-      name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
-      server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
-      sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
-      tech_id: session?.user?.id || '',
-      status: 'ok', last_visit:'', notes:'',
+  useEffect(() => {
+    if (!session) return
+    if (isNew) {
+      setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
+      return
+    }
+    Promise.all([
+      fetchClient(id),
+      fetchEquipment(id),
+      fetchVisits(id),
+      isAdmin ? fetchProfiles() : Promise.resolve([]),
+    ]).then(([cl, eq, vi, pr]) => {
+      setClient(cl)
+      setEquipment(eq)
+      setVisits(vi)
+      setProfiles(pr)
     })
-    setLoading(false)
-    return
-  }
-  Promise.all([
-    fetchClient(id),
-    fetchEquipment(id),
-    fetchVisits(id),
-    isAdmin ? fetchProfiles() : Promise.resolve([]),
-  ]).then(([cl, eq, vi, pr]) => {
-    setClient(cl)
-    setEquipment(eq)
-    setVisits(vi)
-    setProfiles(pr)
-    setLoading(false)
-  })
-}, [id, session])
+  }, [id, session])
 
   const set = (key, val) => setClient(c => ({ ...c, [key]: val }))
 
@@ -129,11 +121,10 @@ export default function ClientDetailPage() {
     setEquipment(eq => ({ ...eq, [category]: items }))
   }, [])
 
-if (!session || !client) return <Loader />
-  
+  if (!session || !client) return <Loader />
+
   return (
     <div>
-      {/* Header */}
       <div className="flex-center gap-12" style={{ marginBottom: 20 }}>
         <button className="btn-icon" onClick={() => navigate('/clients')} title="Πίσω">
           <IconBack size={16} />
@@ -154,7 +145,6 @@ if (!session || !client) return <Loader />
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="card">
         <div className="tabs">
           {TABS.map(t => (
@@ -167,7 +157,6 @@ if (!session || !client) return <Loader />
 
         <div style={{ padding: '20px 20px 24px' }}>
 
-          {/* ── General ── */}
           {tab === 'general' && (
             <div>
               <SectionLabel>Γενικά Στοιχεία</SectionLabel>
@@ -180,7 +169,6 @@ if (!session || !client) return <Loader />
                 <Field label="Υπεύθυνος Επικοινωνίας"><input value={client.contact||''} onChange={e=>set('contact',e.target.value)} /></Field>
                 <Field label="Κινητό Υπευθύνου"><input value={client.contact_mobile||''} onChange={e=>set('contact_mobile',e.target.value)} /></Field>
               </div>
-
               <div className="divider" />
               <SectionLabel>Πληροφορίες Εγκατάστασης</SectionLabel>
               <div className="form-grid">
@@ -190,7 +178,6 @@ if (!session || !client) return <Loader />
                 <Field label="Τύπος / Ταχύτητα"><input value={client.isp_type||''} onChange={e=>set('isp_type',e.target.value)} /></Field>
                 <Field label="Public IP"><input value={client.public_ip||''} placeholder="x.x.x.x" onChange={e=>set('public_ip',e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }} /></Field>
               </div>
-
               <div className="divider" />
               <SectionLabel>Κατάσταση</SectionLabel>
               <div className="form-grid">
@@ -207,7 +194,6 @@ if (!session || !client) return <Loader />
             </div>
           )}
 
-          {/* ── Contract ── */}
           {tab === 'contract' && (
             <div>
               <SectionLabel>Στοιχεία Σύμβασης & SLA</SectionLabel>
@@ -239,7 +225,6 @@ if (!session || !client) return <Loader />
             </div>
           )}
 
-          {/* ── Equipment tabs ── */}
           {['network','servers','workstations','ups','phones'].includes(tab) && !isNew && (
             <EquipmentTab
               key={tab}
@@ -254,7 +239,6 @@ if (!session || !client) return <Loader />
             <div className="empty">Αποθηκεύστε πρώτα τον πελάτη για να προσθέσετε εξοπλισμό.</div>
           )}
 
-          {/* ── History ── */}
           {tab === 'history' && !isNew && (
             <div>
               <div className="flex-between" style={{ marginBottom: 14 }}>
@@ -263,10 +247,8 @@ if (!session || !client) return <Loader />
                   <IconPlus size={12} /> Νέα Επίσκεψη
                 </button>
               </div>
-
               {visits.length === 0 && <div className="empty" style={{ fontSize: 12 }}>Δεν υπάρχει ιστορικό</div>}
-
-              {visits.map((v, i) => (
+              {visits.map((v) => (
                 <VisitRow key={v.id} visit={v} onDelete={() => removeVisit(v.id)} />
               ))}
             </div>
@@ -282,7 +264,6 @@ if (!session || !client) return <Loader />
 function VisitRow({ visit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState({ ...visit })
-  const { showToast } = useToast()
   const VISIT_TYPES = ['Προληπτική','Διορθωτική','Εγκατάσταση','Αναβάθμιση','Αντικατάσταση','Τηλεφωνική']
   const VISIT_STATUS = ['Ολοκληρώθηκε','Εκκρεμεί','Σε Εξέλιξη','Ακυρώθηκε']
 
@@ -296,7 +277,7 @@ function VisitRow({ visit, onDelete }) {
         </div>
         <div className="flex-center gap-8">
           <span style={{ fontSize: 10, color: data.status === 'Ολοκληρώθηκε' ? 'var(--ok)' : 'var(--warn)',
-            border: `1px solid`, borderColor: data.status === 'Ολοκληρώθηκε' ? 'var(--ok)' : 'var(--warn)',
+            border: '1px solid', borderColor: data.status === 'Ολοκληρώθηκε' ? 'var(--ok)' : 'var(--warn)',
             padding: '1px 6px', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {data.status}
           </span>
