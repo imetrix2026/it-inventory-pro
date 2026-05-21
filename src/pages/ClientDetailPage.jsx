@@ -130,8 +130,7 @@ export default function ClientDetailPage() {
   }, [])
 
 if (!session || (!client && loading)) return <Loader />
-if (!client) return <div className="empty">Δεν βρέθηκε</div>
-
+  
   return (
     <div>
       {/* Header */}
