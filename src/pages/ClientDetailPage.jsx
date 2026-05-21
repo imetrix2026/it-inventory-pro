@@ -64,7 +64,7 @@ export default function ClientDetailPage() {
         status: 'ok', last_visit:'', notes:'',
       })
       setLoading(false)
-    } else {
+    } else if (!isNew) {
       Promise.all([
         isNew ? Promise.resolve(null) : fetchClient(id),
         isNew ? Promise.resolve({}) : fetchEquipment(id),
