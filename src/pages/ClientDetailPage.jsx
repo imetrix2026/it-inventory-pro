@@ -36,11 +36,51 @@ const EMPTY_CLIENT = {
   tech_id:'', status:'ok', last_visit:'', notes:'',
 }
 
+// Μετατροπή ημερομηνίας DD/MM/YYYY → YYYY-MM-DD
+function toISO(val) {
+  if (!val) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val
+  const parts = val.split('/')
+  if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`
+  return ''
+}
+
+// Μετατροπή YYYY-MM-DD → DD/MM/YYYY για εμφάνιση
+function toGR(val) {
+  if (!val) return ''
+  const parts = val.split('-')
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
+  return val
+}
+
 function Field({ label, children, full }) {
   return (
     <div className={`field${full ? ' form-full' : ''}`}>
       <label>{label}</label>
       {children}
+    </div>
+  )
+}
+
+function DateInput({ value, onChange }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type="text"
+        placeholder="ΗΗ/ΜΜ/ΕΕΕΕ"
+        value={toGR(value)}
+        onChange={e => {
+          const raw = e.target.value
+          const iso = toISO(raw)
+          onChange(iso || raw)
+        }}
+        onBlur={e => {
+          const iso = toISO(e.target.value)
+          if (iso) onChange(iso)
+          else onChange('')
+        }}
+        maxLength={10}
+      />
     </div>
   )
 }
@@ -60,14 +100,11 @@ export default function ClientDetailPage() {
   const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
-    console.log('useEffect runs, session:', session, 'isNew:', isNew, 'id:', id)
-  if (!session) return
-  if (isNew) {
-    console.log('setting empty client')
-    setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
-    return
-  }
- 
+    if (session === undefined || session === null) return
+    if (isNew) {
+      setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
+      return
+    }
     Promise.all([
       fetchClient(id),
       fetchEquipment(id),
@@ -87,7 +124,13 @@ export default function ClientDetailPage() {
     if (!client.name?.trim()) { showToast('Το όνομα είναι υποχρεωτικό', 'err'); return }
     setSaving(true)
     try {
-      const saved = await upsertClient(client)
+      const toSave = {
+        ...client,
+        last_visit: toISO(client.last_visit) || null,
+        contract_start: toISO(client.contract_start) || null,
+        contract_end: toISO(client.contract_end) || null,
+      }
+      const saved = await upsertClient(toSave)
       if (isNew) navigate(`/clients/${saved.id}`, { replace: true })
       else setClient(saved)
       showToast('Αποθηκεύτηκε επιτυχώς')
@@ -190,7 +233,9 @@ export default function ClientDetailPage() {
                     {STATUS_OPTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </Field>
-                <Field label="Τελευταία Επίσκεψη"><input type="date" value={client.last_visit||''} onChange={e=>set('last_visit',e.target.value)} /></Field>
+                <Field label="Τελευταία Επίσκεψη (ΗΗ/ΜΜ/ΕΕΕΕ)">
+                  <DateInput value={client.last_visit||''} onChange={v=>set('last_visit',v)} />
+                </Field>
                 <Field label="Σημειώσεις" full>
                   <textarea value={client.notes||''} onChange={e=>set('notes',e.target.value)} />
                 </Field>
@@ -208,8 +253,12 @@ export default function ClientDetailPage() {
                     {SLA_OPTS.map(o=><option key={o} value={o}>{o||'— Επιλογή —'}</option>)}
                   </select>
                 </Field>
-                <Field label="Ημ. Έναρξης"><input type="date" value={client.contract_start||''} onChange={e=>set('contract_start',e.target.value)} /></Field>
-                <Field label="Ημ. Λήξης"><input type="date" value={client.contract_end||''} onChange={e=>set('contract_end',e.target.value)} /></Field>
+                <Field label="Ημ. Έναρξης (ΗΗ/ΜΜ/ΕΕΕΕ)">
+                  <DateInput value={client.contract_start||''} onChange={v=>set('contract_start',v)} />
+                </Field>
+                <Field label="Ημ. Λήξης (ΗΗ/ΜΜ/ΕΕΕΕ)">
+                  <DateInput value={client.contract_end||''} onChange={v=>set('contract_end',v)} />
+                </Field>
                 <Field label="Ώρες Υποστήριξης"><input value={client.support_hours||''} placeholder="Δευ-Παρ 09:00-18:00" onChange={e=>set('support_hours',e.target.value)} /></Field>
                 <Field label="Τρόπος Χρέωσης"><input value={client.billing||''} placeholder="Μηνιαίο πάγιο" onChange={e=>set('billing',e.target.value)} /></Field>
               </div>
@@ -294,8 +343,16 @@ function VisitRow({ visit, onDelete }) {
         <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
           <div className="form-grid">
             <div className="field">
-              <label>Ημερομηνία</label>
-              <input type="date" value={data.visit_date||''} onChange={e=>setData(d=>({...d,visit_date:e.target.value}))} />
+              <label>Ημερομηνία (ΗΗ/ΜΜ/ΕΕΕΕ)</label>
+              <input type="text" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" value={data.visit_date ? data.visit_date.split('-').reverse().join('/') : ''} 
+                onChange={e => {
+                  const parts = e.target.value.split('/')
+                  if (parts.length === 3 && parts[2].length === 4) {
+                    setData(d=>({...d, visit_date: `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`}))
+                  } else {
+                    setData(d=>({...d, visit_date: e.target.value}))
+                  }
+                }} maxLength={10} />
             </div>
             <div className="field">
               <label>Τύπος</label>
