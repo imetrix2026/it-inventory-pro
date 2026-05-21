@@ -42,10 +42,7 @@ export async function getProfile(userId) {
 export async function fetchClients() {
   const { data, error } = await supabase
     .from('clients')
-    .select(`
-      *,
-      profiles:tech_id (name, email)
-    `)
+    .select('*')
     .order('name')
   if (error) throw error
   return data
@@ -54,7 +51,7 @@ export async function fetchClients() {
 export async function fetchClient(id) {
   const { data, error } = await supabase
     .from('clients')
-    .select('*, profiles:tech_id (name, email)')
+    .select('*')
     .eq('id', id)
     .single()
   if (error) throw error
