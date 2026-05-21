@@ -60,7 +60,7 @@ export default function ClientDetailPage() {
   const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
-    if (!session) return
+    if (session === undefined || session === null) return
     if (isNew) {
       setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
       return
@@ -121,7 +121,8 @@ export default function ClientDetailPage() {
     setEquipment(eq => ({ ...eq, [category]: items }))
   }, [])
 
-  if (!session || !client) return <Loader />
+  if (session === undefined) return <Loader />
+  if (!client) return <Loader />
 
   return (
     <div>
