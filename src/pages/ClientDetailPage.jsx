@@ -64,6 +64,7 @@ export default function ClientDetailPage() {
       tech_id: session?.user?.id || '',
       status: 'ok', last_visit:'', notes:'',
     })
+    setLoading(false)
     return
   }
   Promise.all([
