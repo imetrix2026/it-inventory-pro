@@ -27,7 +27,7 @@ function AppRoutes() {
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
-      <Route path="/clients/new" element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>} />
+      
       <Route path="/clients/:id" element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
