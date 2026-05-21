@@ -54,31 +54,31 @@ export default function ClientDetailPage() {
   const [loading, setLoading]   = useState(!isNew)
   const [saving, setSaving]     = useState(false)
 
-  useEffect(() => {
-    if (isNew) {
-      setClient({
-        name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
-        server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
-        sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
-        tech_id: session?.user?.id || '',
-        status: 'ok', last_visit:'', notes:'',
-      })
-      setLoading(false)
-    } else if (!isNew) {
-      Promise.all([
-        isNew ? Promise.resolve(null) : fetchClient(id),
-        isNew ? Promise.resolve({}) : fetchEquipment(id),
-		isNew ? Promise.resolve([]) : fetchVisits(id),
-        isAdmin ? fetchProfiles() : Promise.resolve([]),
-      ]).then(([cl, eq, vi, pr]) => {
-        setClient(cl)
-        setEquipment(eq)
-        setVisits(vi)
-        setProfiles(pr)
-        setLoading(false)
-      })
-    }
-  }, [id])
+ useEffect(() => {
+  if (isNew) {
+    setClient({
+      name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
+      server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
+      sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
+      tech_id: session?.user?.id || '',
+      status: 'ok', last_visit:'', notes:'',
+    })
+    setLoading(false)
+    return
+  }
+  Promise.all([
+    fetchClient(id),
+    fetchEquipment(id),
+    fetchVisits(id),
+    isAdmin ? fetchProfiles() : Promise.resolve([]),
+  ]).then(([cl, eq, vi, pr]) => {
+    setClient(cl)
+    setEquipment(eq)
+    setVisits(vi)
+    setProfiles(pr)
+    setLoading(false)
+  })
+}, [id])
 
   const set = (key, val) => setClient(c => ({ ...c, [key]: val }))
 
