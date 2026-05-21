@@ -60,7 +60,7 @@ export default function ClientDetailPage() {
   const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
-    console.log('useEffect runs, session:', session, 'isNew:', isNew)
+    console.log('useEffect runs, session:', session, 'isNew:', isNew, 'id:', id)
   if (!session) return
   if (isNew) {
     console.log('setting empty client')
