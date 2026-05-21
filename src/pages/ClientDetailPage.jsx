@@ -55,7 +55,7 @@ export default function ClientDetailPage() {
   const [saving, setSaving]     = useState(false)
 
  useEffect(() => {
-  if (isNew) {
+if (isNew) {
     setClient({
       name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
       server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
@@ -63,7 +63,6 @@ export default function ClientDetailPage() {
       tech_id: session?.user?.id || '',
       status: 'ok', last_visit:'', notes:'',
     })
-    setLoading(false)
     return
   }
   Promise.all([
