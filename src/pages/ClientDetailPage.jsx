@@ -47,7 +47,12 @@ export default function ClientDetailPage() {
   const { showToast, ToastNode } = useToast()
 
   const [tab, setTab]           = useState('general')
-  const [client, setClient]     = useState(null)
+  const [client, setClient] = useState(isNew ? {
+  name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
+  server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
+  sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
+  tech_id: '', status: 'ok', last_visit:'', notes:'',
+} : null)
   const [equipment, setEquipment] = useState({})
   const [visits, setVisits]     = useState([])
   const [profiles, setProfiles] = useState([])
