@@ -66,7 +66,7 @@ export default function ClientDetailPage() {
       setLoading(false)
     } else {
       Promise.all([
-        fetchClient(id),
+        isNew ? Promise.resolve(null) : fetchClient(id),
         isNew ? Promise.resolve({}) : fetchEquipment(id),
 		isNew ? Promise.resolve([]) : fetchVisits(id),
         isAdmin ? fetchProfiles() : Promise.resolve([]),
