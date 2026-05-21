@@ -60,11 +60,14 @@ export default function ClientDetailPage() {
   const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
-    if (!session) return
-    if (isNew) {
-      setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
-      return
-    }
+    console.log('useEffect runs, session:', session, 'isNew:', isNew)
+  if (!session) return
+  if (isNew) {
+    console.log('setting empty client')
+    setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
+    return
+  }
+ 
     Promise.all([
       fetchClient(id),
       fetchEquipment(id),
