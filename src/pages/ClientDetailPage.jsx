@@ -67,8 +67,8 @@ export default function ClientDetailPage() {
     } else {
       Promise.all([
         fetchClient(id),
-        fetchEquipment(id),
-        fetchVisits(id),
+        isNew ? Promise.resolve({}) : fetchEquipment(id),
+		isNew ? Promise.resolve([]) : fetchVisits(id),
         isAdmin ? fetchProfiles() : Promise.resolve([]),
       ]).then(([cl, eq, vi, pr]) => {
         setClient(cl)
