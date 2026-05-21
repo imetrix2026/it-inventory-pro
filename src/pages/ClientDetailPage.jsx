@@ -129,7 +129,7 @@ export default function ClientDetailPage() {
     setEquipment(eq => ({ ...eq, [category]: items }))
   }, [])
 
-if (!session || (!client && loading)) return <Loader />
+if (!session || !client) return <Loader />
   
   return (
     <div>
