@@ -51,7 +51,7 @@ export default function ClientDetailPage() {
   const [equipment, setEquipment] = useState({})
   const [visits, setVisits]     = useState([])
   const [profiles, setProfiles] = useState([])
-  const [loading, setLoading]   = useState(!isNew)
+  const [loading, setLoading]   = useState(false)
   const [saving, setSaving]     = useState(false)
 
  useEffect(() => {
