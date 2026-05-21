@@ -55,7 +55,8 @@ export default function ClientDetailPage() {
   const [saving, setSaving]     = useState(false)
 
  useEffect(() => {
-if (isNew) {
+   if (!session) return
+  if (isNew) {
     setClient({
       name:'', afm:'', address:'', phone:'', email:'', contact:'', contact_mobile:'',
       server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
@@ -77,7 +78,7 @@ if (isNew) {
     setProfiles(pr)
     setLoading(false)
   })
-}, [id])
+}, [id, session])
 
   const set = (key, val) => setClient(c => ({ ...c, [key]: val }))
 
