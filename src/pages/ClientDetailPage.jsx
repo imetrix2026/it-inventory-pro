@@ -124,8 +124,8 @@ export default function ClientDetailPage() {
     setEquipment(eq => ({ ...eq, [category]: items }))
   }, [])
 
-  if (loading) return <Loader />
-  if (!client) return <Loader />
+if (!session || (!client && loading)) return <Loader />
+if (!client) return <div className="empty">Δεν βρέθηκε</div>
 
   return (
     <div>
