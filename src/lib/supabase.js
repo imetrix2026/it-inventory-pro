@@ -77,6 +77,7 @@ export async function deleteClient(id) {
 // ── Equipment ─────────────────────────────────────────────────────────────────
 
 export async function fetchEquipment(clientId) {
+  if (!clientId || clientId === 'new') return {}
   const { data, error } = await supabase
     .from('equipment')
     .select('*')
@@ -119,6 +120,7 @@ export async function deleteEquipmentItem(id) {
 // ── Visits ────────────────────────────────────────────────────────────────────
 
 export async function fetchVisits(clientId) {
+  if (!clientId || clientId === 'new') return []
   const { data, error } = await supabase
     .from('visits')
     .select('*')
