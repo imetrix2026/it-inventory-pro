@@ -49,7 +49,7 @@ export default function ClientDetailPage() {
   const { id } = useParams()
   const isNew = id === 'new'
   const navigate = useNavigate()
-  const { session, profile, isAdmin } = useAuth()
+  const { session, profile, isAdmin, loading } = useAuth()
   const { showToast, ToastNode } = useToast()
 
   const [tab, setTab]             = useState('general')
@@ -60,7 +60,7 @@ export default function ClientDetailPage() {
   const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
-    if (session === undefined || session === null) return
+    if (!session) return
     if (isNew) {
       setClient({ ...EMPTY_CLIENT, tech_id: session.user.id })
       return
@@ -121,7 +121,7 @@ export default function ClientDetailPage() {
     setEquipment(eq => ({ ...eq, [category]: items }))
   }, [])
 
-  if (session === undefined) return <Loader />
+  if (loading) return <Loader />
   if (!client) return <Loader />
 
   return (
