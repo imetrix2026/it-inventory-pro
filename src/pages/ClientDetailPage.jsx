@@ -10,6 +10,7 @@ import {
   SectionLabel, useToast
 } from '../components/UI'
 import EquipmentTab from '../components/EquipmentTab'
+import { exportClientToExcel } from '../lib/exportClient'
 
 const TABS = [
   { id: 'general',      label: 'Στοιχεία' },
@@ -190,6 +191,11 @@ export default function ClientDetailPage() {
         <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
           <IconSave size={12} /> {saving ? 'Αποθήκευση...' : 'Αποθήκευση'}
         </button>
+        {!isNew && (
+  <button className="btn btn-sm" onClick={() => exportClientToExcel(client, equipment, visits)}>
+    ⬇ Excel
+  </button>
+)}
       </div>
 
       <div className="card">
