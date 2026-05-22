@@ -22,7 +22,9 @@ export default async function handler(req, res) {
       }
     })
 
-    const data = await response.json()
+    const text = await response.text()
+let data
+try { data = JSON.parse(text) } catch(e) { return res.status(200).json({ error: text }) }
 
     if (!response.ok) {
       return res.status(200).json({ error: data.errorMessages?.[0] || `Jira error: ${response.status}` })
