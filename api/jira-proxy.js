@@ -8,7 +8,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { jira_url, jira_email, jira_token, project_key, date_from } = req.body
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {})
+    const { jira_url, jira_email, jira_token, project_key, date_from } = body
     const auth = Buffer.from(`${jira_email}:${jira_token}`).toString('base64')
     const baseUrl = jira_url.replace(/\/$/, '')
     const jql = `project = "${project_key}" AND worklogDate >= "${date_from || '2020-01-01'}" ORDER BY updated DESC`
