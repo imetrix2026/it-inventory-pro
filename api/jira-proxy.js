@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).json({ error: text, status: response.status, url: searchUrl })
+    return res.status(200).end()
   }
 
   try {
@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
     const auth = Buffer.from(`${jira_email}:${jira_token}`).toString('base64')
     const baseUrl = jira_url.replace(/\/$/, '')
     const jql = `project = "${project_key}" AND worklogDate >= "${date_from || '2020-01-01'}" ORDER BY updated DESC`
-    ⚠ The requested API has been removed. Please migrate to the /rest/api/3/search/jql API. A full migration guideline is available at https://developer.atlassian.com/changelog/#CHANGE-2046
+    const searchUrl = `${baseUrl}/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&fields=summary,status,worklog&maxResults=100`
 
     const response = await fetch(searchUrl, {
       headers: {
@@ -23,8 +23,8 @@ module.exports = async function handler(req, res) {
     })
 
     const text = await response.text()
-let data
-try { data = JSON.parse(text) } catch(e) { return res.status(200).json({ error: text }) }
+    let data
+    try { data = JSON.parse(text) } catch(e) { return res.status(200).json({ error: text }) }
 
     if (!response.ok) {
       return res.status(200).json({ error: data.errorMessages?.[0] || `Jira error: ${response.status}` })
