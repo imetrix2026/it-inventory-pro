@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const auth = Buffer.from(`${jira_email}:${jira_token}`).toString('base64')
     const baseUrl = jira_url.replace(/\/$/, '')
     const jql = `project = "${project_key}" AND worklogDate >= "${date_from || '2020-01-01'}" ORDER BY updated DESC`
-    const searchUrl = `${baseUrl}/rest/api/3/search?jql=${encodeURIComponent(jql)}&fields=summary,status,worklog&maxResults=100`
+    ⚠ The requested API has been removed. Please migrate to the /rest/api/3/search/jql API. A full migration guideline is available at https://developer.atlassian.com/changelog/#CHANGE-2046
 
     const response = await fetch(searchUrl, {
       headers: {
