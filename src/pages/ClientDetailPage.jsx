@@ -11,6 +11,7 @@ import {
 } from '../components/UI'
 import EquipmentTab from '../components/EquipmentTab'
 import { exportClientToExcel } from '../lib/exportClient'
+import JiraTab from '../components/JiraTab'
 
 const TABS = [
   { id: 'general',      label: 'Στοιχεία' },
