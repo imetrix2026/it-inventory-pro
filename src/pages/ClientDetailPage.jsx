@@ -193,7 +193,7 @@ export default function ClientDetailPage() {
         <div className="tabs">
           {TABS.map(t => (
             <div key={t.id} className={`tab${tab === t.id ? ' active' : ''}`}
-              onClick={() => setTab(t.id)}>
+              onClick={() => { handleSave(); setTab(t.id) }}>
               {t.label}
             </div>
           ))}
