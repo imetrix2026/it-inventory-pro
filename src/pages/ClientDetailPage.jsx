@@ -37,9 +37,9 @@ const EMPTY_CLIENT = {
   server_room:'', wifi:'', isp:'', isp_type:'', public_ip:'',
   sla:'', contract:'', contract_start:'', contract_end:'', support_hours:'', billing:'',
   tech_id:'', status:'ok', last_visit:'', notes:'',
+  jira_url:'', jira_email:'', jira_api_token:'', jira_project_key:'', prepaid_hours: 0,
 }
 
-// Μετατροπή ημερομηνίας DD/MM/YYYY → YYYY-MM-DD
 function toISO(val) {
   if (!val) return ''
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val
@@ -48,7 +48,6 @@ function toISO(val) {
   return ''
 }
 
-// Μετατροπή YYYY-MM-DD → DD/MM/YYYY για εμφάνιση
 function toGR(val) {
   if (!val) return ''
   const parts = val.split('-')
@@ -67,24 +66,14 @@ function Field({ label, children, full }) {
 
 function DateInput({ value, onChange }) {
   return (
-    <div style={{ position: 'relative' }}>
-      <input
-        type="text"
-        placeholder="ΗΗ/ΜΜ/ΕΕΕΕ"
-        value={toGR(value)}
-        onChange={e => {
-          const raw = e.target.value
-          const iso = toISO(raw)
-          onChange(iso || raw)
-        }}
-        onBlur={e => {
-          const iso = toISO(e.target.value)
-          if (iso) onChange(iso)
-          else onChange('')
-        }}
-        maxLength={10}
-      />
-    </div>
+    <input
+      type="text"
+      placeholder="ΗΗ/ΜΜ/ΕΕΕΕ"
+      value={toGR(value)}
+      onChange={e => { const iso = toISO(e.target.value); onChange(iso || e.target.value) }}
+      onBlur={e => { const iso = toISO(e.target.value); if (iso) onChange(iso); else onChange('') }}
+      maxLength={10}
+    />
   )
 }
 
@@ -101,7 +90,6 @@ export default function ClientDetailPage() {
   const [visits, setVisits]       = useState([])
   const [profiles, setProfiles]   = useState([])
   const [saving, setSaving]       = useState(false)
-  const updateJiraField = (key, val) => set(key, val)
 
   useEffect(() => {
     if (session === undefined || session === null) return
@@ -195,10 +183,10 @@ export default function ClientDetailPage() {
           <IconSave size={12} /> {saving ? 'Αποθήκευση...' : 'Αποθήκευση'}
         </button>
         {!isNew && (
-  <button className="btn btn-sm" onClick={() => exportClientToExcel(client, equipment, visits)}>
-    ⬇ Excel
-  </button>
-)}
+          <button className="btn btn-sm" onClick={() => exportClientToExcel(client, equipment, visits)}>
+            ⬇ Excel
+          </button>
+        )}
       </div>
 
       <div className="card">
@@ -213,6 +201,7 @@ export default function ClientDetailPage() {
 
         <div style={{ padding: '20px 20px 24px' }}>
 
+          {/* ── General ── */}
           {tab === 'general' && (
             <div>
               <SectionLabel>Γενικά Στοιχεία</SectionLabel>
@@ -252,6 +241,7 @@ export default function ClientDetailPage() {
             </div>
           )}
 
+          {/* ── Contract ── */}
           {tab === 'contract' && (
             <div>
               <SectionLabel>Στοιχεία Σύμβασης & SLA</SectionLabel>
@@ -287,6 +277,7 @@ export default function ClientDetailPage() {
             </div>
           )}
 
+          {/* ── Equipment tabs ── */}
           {['network','servers','workstations','ups','phones'].includes(tab) && !isNew && (
             <EquipmentTab
               key={tab}
@@ -301,6 +292,15 @@ export default function ClientDetailPage() {
             <div className="empty">Αποθηκεύστε πρώτα τον πελάτη για να προσθέσετε εξοπλισμό.</div>
           )}
 
+          {/* ── Jira ── */}
+          {tab === 'jira' && !isNew && (
+            <JiraTab client={client} onUpdate={set} />
+          )}
+          {tab === 'jira' && isNew && (
+            <div className="empty">Αποθηκεύστε πρώτα τον πελάτη.</div>
+          )}
+
+          {/* ── History ── */}
           {tab === 'history' && !isNew && (
             <div>
               <div className="flex-between" style={{ marginBottom: 14 }}>
@@ -313,12 +313,6 @@ export default function ClientDetailPage() {
               {visits.map((v) => (
                 <VisitRow key={v.id} visit={v} onDelete={() => removeVisit(v.id)} />
               ))}
-              {tab === 'jira' && !isNew && (
-  <JiraTab client={client} onUpdate={updateJiraField} />
-)}
-{tab === 'jira' && isNew && (
-  <div className="empty">Αποθηκεύστε πρώτα τον πελάτη.</div>
-)}
             </div>
           )}
         </div>
@@ -359,7 +353,8 @@ function VisitRow({ visit, onDelete }) {
           <div className="form-grid">
             <div className="field">
               <label>Ημερομηνία (ΗΗ/ΜΜ/ΕΕΕΕ)</label>
-              <input type="text" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" value={data.visit_date ? data.visit_date.split('-').reverse().join('/') : ''} 
+              <input type="text" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ"
+                value={data.visit_date ? data.visit_date.split('-').reverse().join('/') : ''}
                 onChange={e => {
                   const parts = e.target.value.split('/')
                   if (parts.length === 3 && parts[2].length === 4) {
