@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { upsertEquipmentItem, deleteEquipmentItem } from '../lib/supabase'
 import { EqStatusTag, IconPlus, IconTrash, IconEdit, IconSave, SectionLabel } from './UI'
 
@@ -19,8 +19,18 @@ const CONFIGS = {
       { key: 'warranty', label: 'Εγγύηση έως',  placeholder: '2027-12' },
       { key: 'notes',    label: 'Σημειώσεις',   placeholder: '', full: true },
     ],
-    cols: ['Τύπος','Κατ/στής','Μοντέλο','S/N','IP','Θέση','Κατάσταση'],
-    colKeys: ['type','maker','model','sn','ip','location','status'],
+    cols: ['Τύπος','Κατ/στής','Μοντέλο','IP','Θέση','Κατάσταση'],
+    colKeys: ['type','maker','model','ip','location','status'],
+    cardTitle: (item) => item.type || '—',
+    cardSub: (item) => [item.maker, item.model].filter(Boolean).join(' '),
+    cardDetails: (item) => [
+      item.sn && { label: 'S/N', value: item.sn, mono: true },
+      item.ip && { label: 'IP', value: item.ip, mono: true },
+      item.location && { label: 'Θέση', value: item.location },
+      item.firmware && { label: 'Firmware', value: item.firmware },
+      item.warranty && { label: 'Εγγύηση', value: item.warranty },
+      item.notes && { label: 'Σημ.', value: item.notes },
+    ].filter(Boolean),
   },
   servers: {
     label: 'Servers & Εικονικές Μηχανές',
@@ -39,8 +49,18 @@ const CONFIGS = {
       { key: 'status',   label: 'Κατάσταση',       select: EQ_STATUS_OPTS },
       { key: 'warranty', label: 'Εγγύηση έως',     placeholder: '2027-12' },
     ],
-    cols: ['Hostname','Τύπος','OS','CPU','RAM','IP','Κατάσταση'],
-    colKeys: ['hostname','type','os','cpu','ram','ip','status'],
+    cols: ['Hostname','Τύπος','OS','IP','Κατάσταση'],
+    colKeys: ['hostname','type','os','ip','status'],
+    cardTitle: (item) => item.hostname || item.type || '—',
+    cardSub: (item) => [item.maker, item.model].filter(Boolean).join(' '),
+    cardDetails: (item) => [
+      item.cpu && { label: 'CPU', value: item.cpu },
+      item.ram && { label: 'RAM', value: item.ram + ' GB' },
+      item.storage && { label: 'Storage', value: item.storage },
+      item.os && { label: 'OS', value: item.os },
+      item.ip && { label: 'IP', value: item.ip, mono: true },
+      item.role && { label: 'Ρόλος', value: item.role },
+    ].filter(Boolean),
   },
   workstations: {
     label: 'Σταθμοί Εργασίας & Περιφερειακά',
@@ -57,8 +77,16 @@ const CONFIGS = {
       { key: 'status',  label: 'Κατάσταση',      select: EQ_STATUS_OPTS },
       { key: 'warranty',label: 'Εγγύηση έως',    placeholder: '' },
     ],
-    cols: ['Τύπος','Χρήστης','Μοντέλο','OS','IP','Κατάσταση'],
-    colKeys: ['type','user','model','os','ip','status'],
+    cols: ['Τύπος','Χρήστης','Μοντέλο','OS','Κατάσταση'],
+    colKeys: ['type','user','model','os','status'],
+    cardTitle: (item) => item.type || '—',
+    cardSub: (item) => item.user || '',
+    cardDetails: (item) => [
+      item.maker && { label: 'Κατ/στής', value: item.maker },
+      item.model && { label: 'Μοντέλο', value: item.model },
+      item.os && { label: 'OS', value: item.os },
+      item.ip && { label: 'IP', value: item.ip, mono: true },
+    ].filter(Boolean),
   },
   ups: {
     label: 'UPS & Υποδομή Ρεύματος',
@@ -73,8 +101,15 @@ const CONFIGS = {
       { key: 'status',   label: 'Κατάσταση',            select: EQ_STATUS_OPTS },
       { key: 'notes',    label: 'Σημειώσεις',           placeholder: '', full: true },
     ],
-    cols: ['Κατ/στής','Μοντέλο','VA','Τελ. Μπατ.','Φορτίο','Κατάσταση'],
-    colKeys: ['maker','model','va','lastBat','load','status'],
+    cols: ['Κατ/στής','Μοντέλο','VA','Φορτίο','Κατάσταση'],
+    colKeys: ['maker','model','va','load','status'],
+    cardTitle: (item) => [item.maker, item.model].filter(Boolean).join(' ') || '—',
+    cardSub: (item) => item.va ? item.va + ' VA' : '',
+    cardDetails: (item) => [
+      item.lastBat && { label: 'Τελ. Αντ/ση', value: item.lastBat },
+      item.nextBat && { label: 'Επόμ. Αντ/ση', value: item.nextBat },
+      item.load && { label: 'Φορτίο', value: item.load + '%' },
+    ].filter(Boolean),
   },
   phones: {
     label: 'Τηλεφωνία & Κάμερες',
@@ -89,8 +124,15 @@ const CONFIGS = {
       { key: 'status',   label: 'Κατάσταση',      select: EQ_STATUS_OPTS },
       { key: 'notes',    label: 'Σημειώσεις',     placeholder: '', full: true },
     ],
-    cols: ['Κατηγορία','Κατ/στής','Μοντέλο','Τοποθεσία','IP','Κατάσταση'],
-    colKeys: ['cat','maker','model','location','ip','status'],
+    cols: ['Κατηγορία','Κατ/στής','Μοντέλο','IP','Κατάσταση'],
+    colKeys: ['cat','maker','model','ip','status'],
+    cardTitle: (item) => item.cat || '—',
+    cardSub: (item) => [item.maker, item.model].filter(Boolean).join(' '),
+    cardDetails: (item) => [
+      item.location && { label: 'Θέση', value: item.location },
+      item.ip && { label: 'IP', value: item.ip, mono: true },
+      item.firmware && { label: 'Firmware', value: item.firmware },
+    ].filter(Boolean),
   },
 }
 
@@ -108,62 +150,46 @@ function ViewModal({ item, category, onClose }) {
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
       zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px'
+      padding: '16px'
     }} onClick={onClose}>
       <div style={{
         background: 'var(--navy-2)', border: '1px solid var(--border-h)',
-        borderRadius: 'var(--r-lg)', padding: '24px', width: '100%', maxWidth: 560,
-        maxHeight: '80vh', overflowY: 'auto'
+        borderRadius: 'var(--r-lg)', padding: '20px', width: '100%', maxWidth: 520,
+        maxHeight: '85vh', overflowY: 'auto'
       }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--white)' }}>
+            <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--white)' }}>
               {item.type || item.hostname || item.cat || item.maker || 'Εξοπλισμός'}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-              {cfg.label}
-            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{cfg.label}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 8 }}>
             <EqStatusTag status={item.status} />
             <button onClick={onClose} style={{
               background: 'none', border: '1px solid var(--border-h)',
               borderRadius: 'var(--r-sm)', padding: '4px 10px',
               color: 'var(--muted)', cursor: 'pointer', fontSize: 12
-            }}>✕ Κλείσιμο</button>
+            }}>✕</button>
           </div>
         </div>
-
-        {/* Fields */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {cfg.fields.filter(f => item[f.key]).map(f => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {cfg.fields.filter(f => f.key !== 'status' && item[f.key]).map(f => (
             <div key={f.key} style={{ gridColumn: f.full ? '1/-1' : 'auto' }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 }}>
                 {f.label}
               </div>
               <div style={{
-                fontSize: f.key === 'status' ? 12 : 13,
-                color: 'var(--white)',
+                fontSize: 13, color: 'var(--white)',
                 fontFamily: f.mono ? 'var(--font-mono)' : 'var(--font-sans)',
-                background: 'var(--navy-3)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r-sm)',
-                padding: '6px 10px',
-                wordBreak: 'break-all'
+                background: 'var(--navy-3)', border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)', padding: '6px 10px', wordBreak: 'break-all'
               }}>
-                {f.key === 'status' ? <EqStatusTag status={item[f.key]} /> : item[f.key]}
+                {item[f.key]}
               </div>
             </div>
           ))}
         </div>
-
-        {/* Empty state */}
-        {cfg.fields.filter(f => item[f.key]).length === 0 && (
-          <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: '20px 0' }}>
-            Δεν υπάρχουν καταχωρημένα στοιχεία
-          </div>
-        )}
       </div>
     </div>
   )
@@ -173,14 +199,9 @@ function ViewModal({ item, category, onClose }) {
 function EditForm({ item, onSave, onCancel }) {
   const [data, setData] = useState({ ...item })
   const cfg = CONFIGS[item._category] || CONFIGS.network
-
   function set(key, val) { setData(d => ({ ...d, [key]: val })) }
-
   return (
-    <div style={{
-      background: 'var(--navy-3)', border: '1px solid var(--border-h)',
-      borderRadius: 'var(--r-md)', padding: 16, marginBottom: 12,
-    }}>
+    <div style={{ background: 'var(--navy-3)', border: '1px solid var(--border-h)', borderRadius: 'var(--r-md)', padding: 16, marginBottom: 12 }}>
       <div className="form-grid">
         {cfg.fields.map(f => (
           <div key={f.key} className={`field${f.full ? ' form-full' : ''}`}>
@@ -190,13 +211,9 @@ function EditForm({ item, onSave, onCancel }) {
                 {f.select.map(o => <option key={o}>{o}</option>)}
               </select>
             ) : (
-              <input
-                type="text"
-                placeholder={f.placeholder}
-                value={data[f.key] || ''}
+              <input type="text" placeholder={f.placeholder} value={data[f.key] || ''}
                 onChange={e => set(f.key, e.target.value)}
-                style={f.mono ? { fontFamily: 'var(--font-mono)', fontSize: 12 } : {}}
-              />
+                style={f.mono ? { fontFamily: 'var(--font-mono)', fontSize: 12 } : {}} />
             )}
           </div>
         ))}
@@ -211,15 +228,58 @@ function EditForm({ item, onSave, onCancel }) {
   )
 }
 
+// ── Mobile Card ───────────────────────────────────────────────────────────────
+function MobileCard({ item, category, index, onEdit, onDelete, onView }) {
+  const cfg = CONFIGS[category]
+  return (
+    <div style={{
+      background: 'var(--navy-2)', border: '1px solid var(--border)',
+      borderRadius: 'var(--r-md)', padding: '12px 14px', marginBottom: 8,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 500, fontSize: 14, color: 'var(--white)' }}>{cfg.cardTitle(item)}</div>
+          {cfg.cardSub(item) && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{cfg.cardSub(item)}</div>}
+        </div>
+        <EqStatusTag status={item.status} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+        {cfg.cardDetails(item).slice(0, 4).map((d, i) => (
+          <div key={i}>
+            <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{d.label}</div>
+            <div style={{ fontSize: 12, color: 'var(--white)', fontFamily: d.mono ? 'var(--font-mono)' : 'inherit', wordBreak: 'break-all' }}>{d.value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+        <button className="btn btn-sm" style={{ flex: 1, justifyContent: 'center', color: 'var(--cyan)', borderColor: 'var(--cyan)' }} onClick={() => onView(index)}>
+          👁 Προβολή
+        </button>
+        <button className="btn btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => onEdit(index)}>
+          ✏️ Επεξεργασία
+        </button>
+        <button className="btn btn-sm" style={{ flex: 1, justifyContent: 'center', color: 'var(--err)', borderColor: 'var(--err)' }} onClick={() => onDelete(index)}>
+          🗑 Διαγραφή
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function EquipmentTab({ category, clientId, items = [], onChange, showToast }) {
   const cfg = CONFIGS[category]
   const [editing, setEditing] = useState(null)
   const [viewing, setViewing] = useState(null)
-  const [saving, setSaving] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   async function handleSave(data) {
-    setSaving(true)
     try {
       const { _category, ...item } = data
       const id = await upsertEquipmentItem(clientId, category, item)
@@ -233,8 +293,6 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
       showToast('Αποθηκεύτηκε')
     } catch (e) {
       showToast(e.message, 'err')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -250,26 +308,18 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
     }
   }
 
-  const newItemBase = { ...blankItem(category), _category: category }
-
-  // Icon components inline
   const IconView = () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
     </svg>
   )
 
+  const newItemBase = { ...blankItem(category), _category: category }
+
   return (
     <div>
-      {/* View Modal */}
       {viewing !== null && (
-        <ViewModal
-          item={items[viewing]}
-          category={category}
-          onClose={() => setViewing(null)}
-        />
+        <ViewModal item={items[viewing]} category={category} onClose={() => setViewing(null)} />
       )}
 
       <div className="flex-between" style={{ marginBottom: 14 }}>
@@ -282,80 +332,79 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
       </div>
 
       {editing === 'new' && (
-        <EditForm
-          item={newItemBase}
-          onSave={handleSave}
-          onCancel={() => setEditing(null)}
-        />
+        <EditForm item={newItemBase} onSave={handleSave} onCancel={() => setEditing(null)} />
       )}
 
       {items.length === 0 && editing !== 'new' && (
-        <div className="empty" style={{ padding: '24px', fontSize: 12 }}>
-          Δεν υπάρχει καταγεγραμμένος εξοπλισμός
-        </div>
+        <div className="empty" style={{ padding: '24px', fontSize: 12 }}>Δεν υπάρχει καταγεγραμμένος εξοπλισμός</div>
       )}
 
       {items.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                {cfg.cols.map(c => <th key={c}>{c}</th>)}
-                <th style={{ width: 90 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <React.Fragment key={i}>
-                  <tr>
-                    {cfg.colKeys.map(k => (
-                      <td key={k}>
-                        {k === 'status'
-                          ? <EqStatusTag status={item[k]} />
-                          : <span className={['sn','ip','mac'].includes(k) ? 'mono' : ''}>
-                              {item[k] || <span style={{ color: 'var(--muted)' }}>—</span>}
-                            </span>
-                        }
-                      </td>
-                    ))}
-                    <td>
-                      <div className="flex-center gap-8">
-                        {/* VIEW */}
-                        <button
-                          className="btn-icon"
-                          onClick={() => setViewing(i)}
-                          title="Προβολή"
-                          style={{ color: 'var(--cyan)' }}
-                        >
-                          <IconView />
-                        </button>
-                        {/* EDIT */}
-                        <button className="btn-icon" onClick={() => setEditing(i)} title="Επεξεργασία">
-                          <IconEdit size={13} />
-                        </button>
-                        {/* DELETE */}
-                        <button className="btn-icon danger" onClick={() => handleDelete(i)} title="Διαγραφή">
-                          <IconTrash size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {editing === i && (
+        isMobile ? (
+          // ── Mobile: Card view ──
+          <div>
+            {items.map((item, i) => (
+              <React.Fragment key={i}>
+                {editing === i ? (
+                  <EditForm item={{ ...item, _category: category }} onSave={handleSave} onCancel={() => setEditing(null)} />
+                ) : (
+                  <MobileCard item={item} category={category} index={i}
+                    onEdit={setEditing} onDelete={handleDelete} onView={setViewing} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        ) : (
+          // ── Desktop: Table view ──
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  {cfg.cols.map(c => <th key={c}>{c}</th>)}
+                  <th style={{ width: 90 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <React.Fragment key={i}>
                     <tr>
-                      <td colSpan={cfg.cols.length + 1} style={{ padding: 0 }}>
-                        <EditForm
-                          item={{ ...item, _category: category }}
-                          onSave={handleSave}
-                          onCancel={() => setEditing(null)}
-                        />
+                      {cfg.colKeys.map(k => (
+                        <td key={k}>
+                          {k === 'status'
+                            ? <EqStatusTag status={item[k]} />
+                            : <span className={['sn','ip','mac'].includes(k) ? 'mono' : ''}>
+                                {item[k] || <span style={{ color: 'var(--muted)' }}>—</span>}
+                              </span>
+                          }
+                        </td>
+                      ))}
+                      <td>
+                        <div className="flex-center gap-8">
+                          <button className="btn-icon" onClick={() => setViewing(i)} title="Προβολή" style={{ color: 'var(--cyan)' }}>
+                            <IconView />
+                          </button>
+                          <button className="btn-icon" onClick={() => setEditing(i)} title="Επεξεργασία">
+                            <IconEdit size={13} />
+                          </button>
+                          <button className="btn-icon danger" onClick={() => handleDelete(i)} title="Διαγραφή">
+                            <IconTrash size={13} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {editing === i && (
+                      <tr>
+                        <td colSpan={cfg.cols.length + 1} style={{ padding: 0 }}>
+                          <EditForm item={{ ...item, _category: category }} onSave={handleSave} onCancel={() => setEditing(null)} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
     </div>
   )
