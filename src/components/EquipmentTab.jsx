@@ -4,7 +4,6 @@ import { EqStatusTag, IconPlus, IconTrash, IconEdit, IconSave, SectionLabel } fr
 
 const EQ_STATUS_OPTS = ['Λειτουργεί','Προβληματικό','Εκτός Λειτουργίας','Αντικατάσταση']
 
-// Field configs per category
 const CONFIGS = {
   network: {
     label: 'Δικτυακός Εξοπλισμός',
@@ -17,7 +16,7 @@ const CONFIGS = {
       { key: 'location', label: 'Θέση/Rack',    placeholder: 'Rack 1' },
       { key: 'firmware', label: 'Firmware',      placeholder: '' },
       { key: 'status',   label: 'Κατάσταση',    select: EQ_STATUS_OPTS },
-      { key: 'warranty', label: 'Εγγύηση έως',  placeholder: '2027-12', type: 'month' },
+      { key: 'warranty', label: 'Εγγύηση έως',  placeholder: '2027-12' },
       { key: 'notes',    label: 'Σημειώσεις',   placeholder: '', full: true },
     ],
     cols: ['Τύπος','Κατ/στής','Μοντέλο','S/N','IP','Θέση','Κατάσταση'],
@@ -38,7 +37,7 @@ const CONFIGS = {
       { key: 'ip',       label: 'IP Address',      placeholder: '192.168.1.10', mono: true },
       { key: 'role',     label: 'Ρόλος/Services',  placeholder: 'AD, DNS, Files...' },
       { key: 'status',   label: 'Κατάσταση',       select: EQ_STATUS_OPTS },
-      { key: 'warranty', label: 'Εγγύηση έως',     placeholder: '2027-12', type: 'month' },
+      { key: 'warranty', label: 'Εγγύηση έως',     placeholder: '2027-12' },
     ],
     cols: ['Hostname','Τύπος','OS','CPU','RAM','IP','Κατάσταση'],
     colKeys: ['hostname','type','os','cpu','ram','ip','status'],
@@ -56,7 +55,7 @@ const CONFIGS = {
       { key: 'ip',      label: 'IP/Hostname',    placeholder: '', mono: true },
       { key: 'domain',  label: 'Domain',         placeholder: '' },
       { key: 'status',  label: 'Κατάσταση',      select: EQ_STATUS_OPTS },
-      { key: 'warranty',label: 'Εγγύηση έως',    placeholder: '', type: 'month' },
+      { key: 'warranty',label: 'Εγγύηση έως',    placeholder: '' },
     ],
     cols: ['Τύπος','Χρήστης','Μοντέλο','OS','IP','Κατάσταση'],
     colKeys: ['type','user','model','os','ip','status'],
@@ -68,8 +67,8 @@ const CONFIGS = {
       { key: 'model',    label: 'Μοντέλο',             placeholder: '' },
       { key: 'va',       label: 'Ισχύς (VA)',           placeholder: '3000' },
       { key: 'battery',  label: 'Τύπος Μπαταρίας',     placeholder: '' },
-      { key: 'lastBat',  label: 'Τελ. Αντ/ση Μπατ.',  placeholder: '', type: 'month' },
-      { key: 'nextBat',  label: 'Επόμ. Αντ/ση',        placeholder: '', type: 'month' },
+      { key: 'lastBat',  label: 'Τελ. Αντ/ση Μπατ.',  placeholder: '' },
+      { key: 'nextBat',  label: 'Επόμ. Αντ/ση',        placeholder: '' },
       { key: 'load',     label: 'Φορτίο %',             placeholder: '40' },
       { key: 'status',   label: 'Κατάσταση',            select: EQ_STATUS_OPTS },
       { key: 'notes',    label: 'Σημειώσεις',           placeholder: '', full: true },
@@ -102,6 +101,75 @@ function blankItem(category) {
   return base
 }
 
+// ── View Modal ────────────────────────────────────────────────────────────────
+function ViewModal({ item, category, onClose }) {
+  const cfg = CONFIGS[category]
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+      zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px'
+    }} onClick={onClose}>
+      <div style={{
+        background: 'var(--navy-2)', border: '1px solid var(--border-h)',
+        borderRadius: 'var(--r-lg)', padding: '24px', width: '100%', maxWidth: 560,
+        maxHeight: '80vh', overflowY: 'auto'
+      }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--white)' }}>
+              {item.type || item.hostname || item.cat || item.maker || 'Εξοπλισμός'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+              {cfg.label}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <EqStatusTag status={item.status} />
+            <button onClick={onClose} style={{
+              background: 'none', border: '1px solid var(--border-h)',
+              borderRadius: 'var(--r-sm)', padding: '4px 10px',
+              color: 'var(--muted)', cursor: 'pointer', fontSize: 12
+            }}>✕ Κλείσιμο</button>
+          </div>
+        </div>
+
+        {/* Fields */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {cfg.fields.filter(f => item[f.key]).map(f => (
+            <div key={f.key} style={{ gridColumn: f.full ? '1/-1' : 'auto' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 }}>
+                {f.label}
+              </div>
+              <div style={{
+                fontSize: f.key === 'status' ? 12 : 13,
+                color: 'var(--white)',
+                fontFamily: f.mono ? 'var(--font-mono)' : 'var(--font-sans)',
+                background: 'var(--navy-3)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)',
+                padding: '6px 10px',
+                wordBreak: 'break-all'
+              }}>
+                {f.key === 'status' ? <EqStatusTag status={item[f.key]} /> : item[f.key]}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty state */}
+        {cfg.fields.filter(f => item[f.key]).length === 0 && (
+          <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: '20px 0' }}>
+            Δεν υπάρχουν καταχωρημένα στοιχεία
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Edit Form ─────────────────────────────────────────────────────────────────
 function EditForm({ item, onSave, onCancel }) {
   const [data, setData] = useState({ ...item })
   const cfg = CONFIGS[item._category] || CONFIGS.network
@@ -123,7 +191,7 @@ function EditForm({ item, onSave, onCancel }) {
               </select>
             ) : (
               <input
-                type={f.type || 'text'}
+                type="text"
                 placeholder={f.placeholder}
                 value={data[f.key] || ''}
                 onChange={e => set(f.key, e.target.value)}
@@ -143,9 +211,11 @@ function EditForm({ item, onSave, onCancel }) {
   )
 }
 
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function EquipmentTab({ category, clientId, items = [], onChange, showToast }) {
   const cfg = CONFIGS[category]
-  const [editing, setEditing] = useState(null) // null | index | 'new'
+  const [editing, setEditing] = useState(null)
+  const [viewing, setViewing] = useState(null)
   const [saving, setSaving] = useState(false)
 
   async function handleSave(data) {
@@ -182,8 +252,26 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
 
   const newItemBase = { ...blankItem(category), _category: category }
 
+  // Icon components inline
+  const IconView = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  )
+
   return (
     <div>
+      {/* View Modal */}
+      {viewing !== null && (
+        <ViewModal
+          item={items[viewing]}
+          category={category}
+          onClose={() => setViewing(null)}
+        />
+      )}
+
       <div className="flex-between" style={{ marginBottom: 14 }}>
         <SectionLabel>{cfg.label}</SectionLabel>
         {editing === null && (
@@ -213,7 +301,7 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
             <thead>
               <tr>
                 {cfg.cols.map(c => <th key={c}>{c}</th>)}
-                <th style={{ width: 70 }}></th>
+                <th style={{ width: 90 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -232,9 +320,20 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
                     ))}
                     <td>
                       <div className="flex-center gap-8">
+                        {/* VIEW */}
+                        <button
+                          className="btn-icon"
+                          onClick={() => setViewing(i)}
+                          title="Προβολή"
+                          style={{ color: 'var(--cyan)' }}
+                        >
+                          <IconView />
+                        </button>
+                        {/* EDIT */}
                         <button className="btn-icon" onClick={() => setEditing(i)} title="Επεξεργασία">
                           <IconEdit size={13} />
                         </button>
+                        {/* DELETE */}
                         <button className="btn-icon danger" onClick={() => handleDelete(i)} title="Διαγραφή">
                           <IconTrash size={13} />
                         </button>
