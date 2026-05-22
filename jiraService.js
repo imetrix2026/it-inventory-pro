@@ -1,4 +1,4 @@
-export async function fetchJiraWorklogs(jiraUrl, jiraEmail, apiToken, projectKey, dateFrom) {
+export async function fetchJiraWorklogs(jiraUrl, jiraEmail, apiToken, projectKey, dateFrom) { 
   const res = await fetch('/api/jira-proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
