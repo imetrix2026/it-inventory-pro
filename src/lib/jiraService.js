@@ -11,6 +11,7 @@ export async function fetchJiraWorklogs(jiraUrl, jiraEmail, apiToken, projectKey
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({
       jira_url: jiraUrl,
