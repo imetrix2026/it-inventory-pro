@@ -21,6 +21,7 @@ const TABS = [
   { id: 'workstations', label: 'Σταθμοί' },
   { id: 'ups',          label: 'UPS' },
   { id: 'phones',       label: 'Τηλεφωνία' },
+  { id: 'jira',         label: '⏱ Jira' },
   { id: 'history',      label: 'Ιστορικό' },
 ]
 
