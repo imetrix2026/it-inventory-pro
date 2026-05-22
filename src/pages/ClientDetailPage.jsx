@@ -101,6 +101,7 @@ export default function ClientDetailPage() {
   const [visits, setVisits]       = useState([])
   const [profiles, setProfiles]   = useState([])
   const [saving, setSaving]       = useState(false)
+  const updateJiraField = (key, val) => set(key, val)
 
   useEffect(() => {
     if (session === undefined || session === null) return
@@ -312,6 +313,12 @@ export default function ClientDetailPage() {
               {visits.map((v) => (
                 <VisitRow key={v.id} visit={v} onDelete={() => removeVisit(v.id)} />
               ))}
+              {tab === 'jira' && !isNew && (
+  <JiraTab client={client} onUpdate={updateJiraField} />
+)}
+{tab === 'jira' && isNew && (
+  <div className="empty">Αποθηκεύστε πρώτα τον πελάτη.</div>
+)}
             </div>
           )}
         </div>
