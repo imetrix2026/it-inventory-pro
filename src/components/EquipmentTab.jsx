@@ -3,7 +3,7 @@ import { upsertEquipmentItem, deleteEquipmentItem } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 import { EqStatusTag, IconPlus, IconTrash, IconEdit, IconSave, SectionLabel } from './UI'
 
-const EQ_STATUS_OPTS = ['Λειτουργεί','Προβληματικό','Εκτός Λειτουργίας','Αντικατάσταση'] 
+const EQ_STATUS_OPTS = ['Λειτουργεί','Προβληματικό','Εκτός Λειτουργίας','Αντικατάσταση']
 
 const CONFIGS = {
   network: {
@@ -245,13 +245,18 @@ function FileUploadSection({ itemId, clientId, category }) {
     setUploading(true)
     try {
       for (const file of selected) {
-        const path = `${folder}/${Date.now()}_${file.name}`
-        const { error } = await supabase.storage.from('equipment-files').upload(path, file)
+        // Sanitize filename: remove greek/special chars, keep extension
+        const ext = file.name.split('.').pop().toLowerCase()
+        const safeName = `${Date.now()}.${ext}`
+        const path = `${clientId}/${category}/${itemId}/${safeName}`
+        const { error } = await supabase.storage
+          .from('equipment-files')
+          .upload(path, file, { upsert: false, contentType: file.type })
         if (error) throw error
       }
       await loadFiles()
-    } catch (e) {
-      console.error('Upload error:', e)
+    } catch (err) {
+      console.error('Upload error:', err)
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -261,7 +266,8 @@ function FileUploadSection({ itemId, clientId, category }) {
   async function handleDelete(fileName, e) {
     e.stopPropagation()
     try {
-      await supabase.storage.from('equipment-files').remove([`${folder}/${fileName}`])
+      const { error: delErr } = await supabase.storage.from('equipment-files').remove([`${clientId}/${category}/${itemId}/${fileName}`])
+      if (delErr) throw delErr
       setFiles(prev => prev.filter(f => f.name !== fileName))
     } catch (e) {
       console.error('Delete error:', e)
