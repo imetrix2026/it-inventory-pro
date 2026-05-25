@@ -25,7 +25,7 @@ const TABS = [
   { id: 'history',      label: 'Ιστορικό' },
 ]
 
-const SLA_OPTS = ['','4h on-site','8h on-site','NBD','24x7','Best effort']
+const SLA_OPTS = ['','4h respond','8h on-site','NBD','24x7','Best effort']
 const STATUS_OPTS = [
   { value: 'ok',   label: 'Κανονική' },
   { value: 'warn', label: 'Εκκρεμότητες' },
