@@ -578,7 +578,7 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
               <thead>
                 <tr>
                   {cfg.cols.map(c => <th key={c}>{c}</th>)}
-                  <th style={{ width: 90 }}></th>
+                  <th style={{ width: 110 }}></th>
                 </tr>
               </thead>
               <tbody>
