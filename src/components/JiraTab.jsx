@@ -162,7 +162,13 @@ export default function JiraTab({ client, onUpdate }) {
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cyan)', marginBottom: 10, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
             Tickets με καταγεγραμμένες ώρες ({data.tickets.length})
           </div>
-          {data.tickets.map((ticket, i) => (
+          {[...data.tickets]
+  .sort((a, b) => {
+    const latestA = a.worklogs.reduce((max, wl) => wl.date > max ? wl.date : max, '')
+    const latestB = b.worklogs.reduce((max, wl) => wl.date > max ? wl.date : max, '')
+    return latestB.localeCompare(latestA)
+  })
+  .map((ticket, i) => (;
             <div key={ticket.key} style={{
               background: 'var(--navy-3)', border: '1px solid var(--border)',
               borderRadius: 'var(--r-md)', marginBottom: 6, overflow: 'hidden'
@@ -188,7 +194,7 @@ export default function JiraTab({ client, onUpdate }) {
                     </div>
                   ))}
                 </div>
-              )}
+              ))}
             </div>
           ))}
         </div>
