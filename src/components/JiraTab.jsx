@@ -161,7 +161,7 @@ export default function JiraTab({ client, onUpdate }) {
           ⚠ {error}
         </div>
       )}
-
+ 
       {/* ── Tickets ── */}
       {data && sortedTickets.length > 0 && (
         <div>
