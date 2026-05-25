@@ -10,7 +10,6 @@ function HoursBar({ used, total }) {
 
   return (
     <div style={{ marginBottom: 20 }}>
-      {/* Big numbers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
         <div style={{ background: 'var(--navy-3)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '14px 16px', textAlign: 'center' }}>
           <div style={{ fontSize: 28, fontWeight: 300, fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{total}</div>
@@ -30,7 +29,6 @@ function HoursBar({ used, total }) {
         </div>
       </div>
 
-      {/* Progress bar */}
       <div style={{ background: 'var(--navy-3)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.5s ease' }} />
       </div>
@@ -80,6 +78,14 @@ export default function JiraTab({ client, onUpdate }) {
   useEffect(() => {
     if (hasCredentials) loadJira()
   }, [])
+
+  const sortedTickets = data
+    ? [...data.tickets].sort((a, b) => {
+        const latestA = a.worklogs.reduce((max, wl) => wl.date > max ? wl.date : max, '')
+        const latestB = b.worklogs.reduce((max, wl) => wl.date > max ? wl.date : max, '')
+        return latestB.localeCompare(latestA)
+      })
+    : []
 
   return (
     <div>
@@ -157,18 +163,12 @@ export default function JiraTab({ client, onUpdate }) {
       )}
 
       {/* ── Tickets ── */}
-      {data && data.tickets.length > 0 && (
+      {data && sortedTickets.length > 0 && (
         <div>
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cyan)', marginBottom: 10, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
-            Tickets με καταγεγραμμένες ώρες ({data.tickets.length})
+            Tickets με καταγεγραμμένες ώρες ({sortedTickets.length})
           </div>
-          {[...data.tickets]
-  .sort((a, b) => {
-    const latestA = a.worklogs.reduce((max, wl) => wl.date > max ? wl.date : max, '')
-    const latestB = b.worklogs.reduce((max, wl) => wl.date > max ? wl.date : max, '')
-    return latestB.localeCompare(latestA)
-  })
-  .map((ticket, i) => (;
+          {sortedTickets.map((ticket, i) => (
             <div key={ticket.key} style={{
               background: 'var(--navy-3)', border: '1px solid var(--border)',
               borderRadius: 'var(--r-md)', marginBottom: 6, overflow: 'hidden'
@@ -185,22 +185,24 @@ export default function JiraTab({ client, onUpdate }) {
               </div>
               {expandedTicket === i && (
                 <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px' }}>
-                  {ticket.worklogs.map((wl, j) => (
-                    <div key={j} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: j < ticket.worklogs.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', flexShrink: 0, minWidth: 80 }}>{wl.date}</span>
-                      <span style={{ fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>{wl.author}</span>
-                      <span style={{ flex: 1, fontSize: 12, color: 'var(--white)' }}>{wl.comment || '—'}</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--warn)', flexShrink: 0 }}>{wl.timeSpentHours}h</span>
-                    </div>
-                  ))}
+                  {[...ticket.worklogs]
+                    .sort((a, b) => b.date.localeCompare(a.date))
+                    .map((wl, j) => (
+                      <div key={j} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: j < ticket.worklogs.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', flexShrink: 0, minWidth: 80 }}>{wl.date}</span>
+                        <span style={{ fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>{wl.author}</span>
+                        <span style={{ flex: 1, fontSize: 12, color: 'var(--white)' }}>{wl.comment || '—'}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--warn)', flexShrink: 0 }}>{wl.timeSpentHours}h</span>
+                      </div>
+                    ))}
                 </div>
-              ))}
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {data && data.tickets.length === 0 && !loading && (
+      {data && sortedTickets.length === 0 && !loading && (
         <div className="empty" style={{ fontSize: 13 }}>Δεν βρέθηκαν tickets με worklogs για την επιλεγμένη περίοδο.</div>
       )}
     </div>
