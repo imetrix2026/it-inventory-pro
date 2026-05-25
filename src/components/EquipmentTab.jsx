@@ -3,7 +3,7 @@ import { upsertEquipmentItem, deleteEquipmentItem } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 import { EqStatusTag, IconPlus, IconTrash, IconEdit, IconSave, SectionLabel } from './UI'
 
-const EQ_STATUS_OPTS = ['Λειτουργεί','Προβληματικό','Εκτός Λειτουργίας','Αντικατάσταση']
+const EQ_STATUS_OPTS = ['Λειτουργεί','Προβληματικό','Εκτός Λειτουργίας','Αντικατάσταση'] 
 
 const CONFIGS = {
   network: {
