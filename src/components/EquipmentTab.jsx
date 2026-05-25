@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { upsertEquipmentItem, deleteEquipmentItem } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { EqStatusTag, IconPlus, IconTrash, IconEdit, IconSave, SectionLabel } from './UI'
 
 const EQ_STATUS_OPTS = ['Λειτουργεί','Προβληματικό','Εκτός Λειτουργίας','Αντικατάσταση']
@@ -143,8 +144,202 @@ function blankItem(category) {
   return base
 }
 
+// ── File Viewer Modal ─────────────────────────────────────────────────────────
+function FileViewerModal({ files, onClose }) {
+  const [current, setCurrent] = useState(0)
+  const file = files[current]
+  const isPdf = file?.name?.toLowerCase().endsWith('.pdf') || file?.url?.includes('.pdf')
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+      zIndex: 1000, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', padding: 16
+    }} onClick={onClose}>
+      <div style={{
+        background: 'var(--navy-2)', border: '1px solid var(--border-h)',
+        borderRadius: 'var(--r-lg)', width: '100%', maxWidth: 800,
+        maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'
+      }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 13, color: 'var(--white)', fontWeight: 500 }}>{file?.name}</span>
+            <span style={{ fontSize: 11, color: 'var(--muted)' }}>{current + 1} / {files.length}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a href={file?.url} target="_blank" rel="noreferrer"
+              style={{ fontSize: 12, color: 'var(--cyan)', textDecoration: 'none', padding: '4px 10px', border: '1px solid var(--cyan)', borderRadius: 'var(--r-sm)' }}>
+              ↗ Άνοιγμα
+            </a>
+            <button onClick={onClose} style={{
+              background: 'none', border: '1px solid var(--border-h)',
+              borderRadius: 'var(--r-sm)', padding: '4px 10px',
+              color: 'var(--muted)', cursor: 'pointer', fontSize: 12
+            }}>✕</button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, minHeight: 300 }}>
+          {isPdf ? (
+            <iframe src={file?.url} style={{ width: '100%', height: '60vh', border: 'none', borderRadius: 4 }} title={file?.name} />
+          ) : (
+            <img src={file?.url} alt={file?.name} style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: 4 }} />
+          )}
+        </div>
+
+        {/* Thumbnails */}
+        {files.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, padding: '10px 16px', borderTop: '1px solid var(--border)', overflowX: 'auto' }}>
+            {files.map((f, i) => (
+              <div key={i} onClick={() => setCurrent(i)} style={{
+                width: 48, height: 48, flexShrink: 0, cursor: 'pointer',
+                border: `2px solid ${i === current ? 'var(--cyan)' : 'var(--border)'}`,
+                borderRadius: 'var(--r-sm)', overflow: 'hidden', background: 'var(--navy-3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                {f.name?.toLowerCase().endsWith('.pdf') ? (
+                  <span style={{ fontSize: 18 }}>📄</span>
+                ) : (
+                  <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── File Upload Section ───────────────────────────────────────────────────────
+function FileUploadSection({ itemId, clientId, category }) {
+  const [files, setFiles] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerStart, setViewerStart] = useState(0)
+
+  const folder = `${clientId}/${category}/${itemId}`
+
+  async function loadFiles() {
+    if (!itemId) return
+    try {
+      const { data, error } = await supabase.storage.from('equipment-files').list(folder)
+      if (error) throw error
+      const withUrls = (data || []).filter(f => f.name !== '.emptyFolderPlaceholder').map(f => ({
+        name: f.name,
+        url: supabase.storage.from('equipment-files').getPublicUrl(`${folder}/${f.name}`).data.publicUrl
+      }))
+      setFiles(withUrls)
+    } catch (e) {
+      console.error('Load files error:', e)
+    }
+  }
+
+  useEffect(() => { loadFiles() }, [itemId])
+
+  async function handleUpload(e) {
+    const selected = Array.from(e.target.files)
+    if (!selected.length || !itemId) return
+    setUploading(true)
+    try {
+      for (const file of selected) {
+        const path = `${folder}/${Date.now()}_${file.name}`
+        const { error } = await supabase.storage.from('equipment-files').upload(path, file)
+        if (error) throw error
+      }
+      await loadFiles()
+    } catch (e) {
+      console.error('Upload error:', e)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handleDelete(fileName, e) {
+    e.stopPropagation()
+    try {
+      await supabase.storage.from('equipment-files').remove([`${folder}/${fileName}`])
+      setFiles(prev => prev.filter(f => f.name !== fileName))
+    } catch (e) {
+      console.error('Delete error:', e)
+    }
+  }
+
+  function openViewer(index) {
+    setViewerStart(index)
+    setViewerOpen(true)
+  }
+
+  if (!itemId) return (
+    <div style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>
+      Αποθηκεύστε πρώτα για να προσθέσετε αρχεία
+    </div>
+  )
+
+  return (
+    <div>
+      {viewerOpen && files.length > 0 && (
+        <FileViewerModal
+          files={files}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
+
+      {/* Upload button */}
+      <label style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 12px', borderRadius: 'var(--r-sm)',
+        border: '1px dashed var(--border-h)', cursor: 'pointer',
+        fontSize: 12, color: uploading ? 'var(--muted)' : 'var(--cyan)',
+        background: 'var(--navy-3)', marginBottom: files.length > 0 ? 10 : 0
+      }}>
+        <input type="file" accept=".jpg,.jpeg,.png,.pdf" multiple onChange={handleUpload}
+          style={{ display: 'none' }} disabled={uploading} />
+        {uploading ? '⏳ Ανέβασμα...' : '📎 Προσθήκη αρχείων'}
+      </label>
+
+      {/* File list */}
+      {files.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {files.map((f, i) => (
+            <div key={i} onClick={() => openViewer(i)} style={{
+              position: 'relative', width: 64, height: 64, cursor: 'pointer',
+              border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
+              overflow: 'hidden', background: 'var(--navy-3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {f.name?.toLowerCase().endsWith('.pdf') ? (
+                <span style={{ fontSize: 28 }}>📄</span>
+              ) : (
+                <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+              <button
+                onClick={(e) => handleDelete(f.name, e)}
+                style={{
+                  position: 'absolute', top: 2, right: 2,
+                  background: 'rgba(0,0,0,0.7)', border: 'none',
+                  borderRadius: '50%', width: 18, height: 18,
+                  color: 'var(--err)', cursor: 'pointer', fontSize: 10,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>✕</button>
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'rgba(0,0,0,0.6)', fontSize: 9, color: '#fff',
+                padding: '2px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>{f.name.replace(/^\d+_/, '')}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── View Modal ────────────────────────────────────────────────────────────────
-function ViewModal({ item, category, onClose }) {
+function ViewModal({ item, category, clientId, onClose }) {
   const cfg = CONFIGS[category]
   return (
     <div style={{
@@ -154,7 +349,7 @@ function ViewModal({ item, category, onClose }) {
     }} onClick={onClose}>
       <div style={{
         background: 'var(--navy-2)', border: '1px solid var(--border-h)',
-        borderRadius: 'var(--r-lg)', padding: '20px', width: '100%', maxWidth: 520,
+        borderRadius: 'var(--r-lg)', padding: '20px', width: '100%', maxWidth: 560,
         maxHeight: '85vh', overflowY: 'auto'
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -173,7 +368,7 @@ function ViewModal({ item, category, onClose }) {
             }}>✕</button>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           {cfg.fields.filter(f => f.key !== 'status' && item[f.key]).map(f => (
             <div key={f.key} style={{ gridColumn: f.full ? '1/-1' : 'auto' }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 4 }}>
@@ -190,13 +385,21 @@ function ViewModal({ item, category, onClose }) {
             </div>
           ))}
         </div>
+
+        {/* Files section in ViewModal */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cyan)', marginBottom: 10 }}>
+            Αρχεία & Φωτογραφίες
+          </div>
+          <FileUploadSection itemId={item._id} clientId={clientId} category={category} />
+        </div>
       </div>
     </div>
   )
 }
 
 // ── Edit Form ─────────────────────────────────────────────────────────────────
-function EditForm({ item, onSave, onCancel }) {
+function EditForm({ item, clientId, onSave, onCancel }) {
   const [data, setData] = useState({ ...item })
   const cfg = CONFIGS[item._category] || CONFIGS.network
   function set(key, val) { setData(d => ({ ...d, [key]: val })) }
@@ -218,6 +421,17 @@ function EditForm({ item, onSave, onCancel }) {
           </div>
         ))}
       </div>
+
+      {/* Files in EditForm only if item already saved */}
+      {item._id && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cyan)', marginBottom: 10 }}>
+            Αρχεία & Φωτογραφίες
+          </div>
+          <FileUploadSection itemId={item._id} clientId={clientId} category={item._category} />
+        </div>
+      )}
+
       <div className="flex-center gap-8" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
         <button className="btn btn-sm" onClick={onCancel}>Ακύρωση</button>
         <button className="btn btn-sm btn-primary" onClick={() => onSave(data)}>
@@ -319,7 +533,12 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
   return (
     <div>
       {viewing !== null && (
-        <ViewModal item={items[viewing]} category={category} onClose={() => setViewing(null)} />
+        <ViewModal
+          item={items[viewing]}
+          category={category}
+          clientId={clientId}
+          onClose={() => setViewing(null)}
+        />
       )}
 
       <div className="flex-between" style={{ marginBottom: 14 }}>
@@ -332,7 +551,7 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
       </div>
 
       {editing === 'new' && (
-        <EditForm item={newItemBase} onSave={handleSave} onCancel={() => setEditing(null)} />
+        <EditForm item={newItemBase} clientId={clientId} onSave={handleSave} onCancel={() => setEditing(null)} />
       )}
 
       {items.length === 0 && editing !== 'new' && (
@@ -341,12 +560,11 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
 
       {items.length > 0 && (
         isMobile ? (
-          // ── Mobile: Card view ──
           <div>
             {items.map((item, i) => (
               <React.Fragment key={i}>
                 {editing === i ? (
-                  <EditForm item={{ ...item, _category: category }} onSave={handleSave} onCancel={() => setEditing(null)} />
+                  <EditForm item={{ ...item, _category: category }} clientId={clientId} onSave={handleSave} onCancel={() => setEditing(null)} />
                 ) : (
                   <MobileCard item={item} category={category} index={i}
                     onEdit={setEditing} onDelete={handleDelete} onView={setViewing} />
@@ -355,7 +573,6 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
             ))}
           </div>
         ) : (
-          // ── Desktop: Table view ──
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
@@ -395,7 +612,7 @@ export default function EquipmentTab({ category, clientId, items = [], onChange,
                     {editing === i && (
                       <tr>
                         <td colSpan={cfg.cols.length + 1} style={{ padding: 0 }}>
-                          <EditForm item={{ ...item, _category: category }} onSave={handleSave} onCancel={() => setEditing(null)} />
+                          <EditForm item={{ ...item, _category: category }} clientId={clientId} onSave={handleSave} onCancel={() => setEditing(null)} />
                         </td>
                       </tr>
                     )}
