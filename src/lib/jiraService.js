@@ -1,6 +1,6 @@
 const JIRA_URL = 'https://getsupport.atlassian.net'
 const JIRA_EMAIL = 'tassos@metrixnet.com'
-const JIRA_TOKEN = 'your-api-token-here'
+const JIRA_TOKEN = ''
 
 export async function fetchJiraWorklogs(projectKey, dateFrom) {
   const res = await fetch('/api/jira-proxy', {
