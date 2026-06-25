@@ -2,8 +2,8 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # Κάθε μέρα στις 8:00 πρωί
-  workflow_dispatch:      # Μπορεί να τρέξει και χειροκίνητα
+    - cron: '0 8 * * *'
+  workflow_dispatch:
 
 jobs:
   ping:
@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: Ping Supabase
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             "https://uczrfrvcfoshxdjwjamd.supabase.co/rest/v1/profiles?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
-          echo " - Supabase pinged successfully"
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP Status: $STATUS"
