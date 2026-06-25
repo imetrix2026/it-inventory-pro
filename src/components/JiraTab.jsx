@@ -48,8 +48,7 @@ export default function JiraTab({ client, onUpdate }) {
   const [newHours, setNewHours] = useState(client.prepaid_hours || 0)
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date()
-    d.setMonth(d.getMonth() - 1)
-    return d.toISOString().split('T')[0]
+    return `${d.getFullYear()}-01-01`
   })
   const [expandedTicket, setExpandedTicket] = useState(null)
 
