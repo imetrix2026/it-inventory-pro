@@ -8,11 +8,9 @@ module.exports = async function handler(req, res) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {})
     const { project_key, date_from } = body
-
     const jira_url = 'https://getsupport.atlassian.net'
     const jira_email = 'tassos@metrixnet.com'
     const jira_token = process.env.JIRA_API_TOKEN
-
     const auth = Buffer.from(`${jira_email}:${jira_token}`).toString('base64')
     const baseUrl = jira_url.replace(/\/$/, '')
     const jql = `project = "${project_key}" AND worklogDate >= "${date_from || '2020-01-01'}" ORDER BY updated DESC`
@@ -60,4 +58,6 @@ module.exports = async function handler(req, res) {
       issueCount: issues.length,
     })
   } catch (err) {
-    return res.status(200).json({
+    return res.status(200).json({ error: err.message })
+  }
+}
